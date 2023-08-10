@@ -14,7 +14,7 @@ extension Socket {
     ///   - listenAddress: String representation of the address the socket should accept
     ///       connections from. It should be in IPv4 format if forceIPv4 == true,
     ///       otherwise - in IPv6.
-    public class func tcpSocketForListen(_ port: in_port_t, _ forceIPv4: Bool = false, _ maxPendingConnection: Int32 = SOMAXCONN, _ listenAddress: String? = nil) throws -> Socket {
+    public class func tcpSocketForListen(_ port: in_port_t, _ forceIPv4: Bool = false, _ maxPendingConnection: Int32 = SOMAXCONN, _ listenAddress: String? = nil, _ interfaceIndex: UInt32 = 0) throws -> Socket {
 
         #if os(Linux)
             let socketFileDescriptor = socket(forceIPv4 ? AF_INET : AF_INET6, Int32(SOCK_STREAM.rawValue), 0)
@@ -67,7 +67,7 @@ extension Socket {
                 sin6_port: port.bigEndian,
                 sin6_flowinfo: 0,
                 sin6_addr: in6addr_any,
-                sin6_scope_id: 0)
+                sin6_scope_id: interfaceIndex)
             #else
             var addr = sockaddr_in6(
                 sin6_len: UInt8(MemoryLayout<sockaddr_in6>.stride),
@@ -75,7 +75,7 @@ extension Socket {
                 sin6_port: port.bigEndian,
                 sin6_flowinfo: 0,
                 sin6_addr: in6addr_any,
-                sin6_scope_id: 0)
+                sin6_scope_id: interfaceIndex)
             #endif
             if let address = listenAddress {
               if address.withCString({ cstring in inet_pton(AF_INET6, cstring, &addr.sin6_addr) }) == 1 {
