@@ -30,7 +30,8 @@ open class HttpServerIO {
 
     public private(set) var state: HttpServerIOState {
         get {
-            return HttpServerIOState(rawValue: stateValue)!
+            let value = OSAtomicAnd32(0xffffffff, &stateValue)
+            return HttpServerIOState(rawValue: value)!
         }
         set(state) {
             #if !os(Linux)
