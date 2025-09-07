@@ -70,6 +70,7 @@ open class HttpServerIO {
     }
 
     @Locked<HttpServerIOState> public var state = .stopped
+    private let lock = NSLock()
 
     public var operating: Bool { return self.state == .running }
 
@@ -94,51 +95,98 @@ open class HttpServerIO {
     }
 
     deinit {
-        stop()
+        let group = DispatchGroup()
+        group.enter()
+        stop {
+            group.leave()
+        }
+        group.wait()
     }
 
     @available(macOS 10.10, *)
-    public func start(_ port: in_port_t = 8080, _ interface: UInt32 = 0, forceIPv4: Bool = false, priority: DispatchQoS.QoSClass = DispatchQoS.QoSClass.background) throws {
-        guard !self.operating else { return }
-        stop()
-        self.state = .starting
-        let address = forceIPv4 ? listenAddressIPv4 : listenAddressIPv6
-        self.socket = try Socket.tcpSocketForListen(port, forceIPv4, SOMAXCONN, address, interface)
-        self.state = .running
-        DispatchQueue.global(qos: priority).async { [weak self] in
-            guard let strongSelf = self else { return }
-            guard strongSelf.operating else { return }
-            while let socket = try? strongSelf.socket.acceptClientSocket() {
-                DispatchQueue.global(qos: priority).async { [weak self] in
-                    guard let strongSelf = self else { return }
-                    guard strongSelf.operating else { return }
-                    strongSelf.queue.async {
-                        strongSelf.sockets.insert(socket)
-                    }
+    public func start(
+        _ port: in_port_t = 8080,
+        _ interface: UInt32 = 0,
+        forceIPv4: Bool = false,
+        priority: DispatchQoS.QoSClass = DispatchQoS.QoSClass.background,
+        startedHandler: ((Result<Void, Error>) -> Void)? = nil
+    ) {
+        stop { [self] in
+            lock.lock()
+            defer { lock.unlock() }
 
-                    strongSelf.handleConnection(socket)
+            guard !operating else {
+                startedHandler?(.success(()))
+                return
+            }
 
-                    strongSelf.queue.async {
-                        strongSelf.sockets.remove(socket)
+            state = .starting
+
+            let address = forceIPv4 ? listenAddressIPv4 : listenAddressIPv6
+            do {
+                self.socket = try Socket.tcpSocketForListen(port, forceIPv4, SOMAXCONN, address, interface)
+            } catch {
+                startedHandler?(.failure(error))
+                return
+            }
+
+            state = .running
+
+            DispatchQueue.global(qos: priority).async { [self] in
+                startedHandler?(.success(()))
+                while let socket = try? socket.acceptClientSocket() {
+                    DispatchQueue.global(qos: priority).async { [weak self] in
+                        
+                        guard let strongSelf = self else {
+                            return
+                        }
+
+                        guard strongSelf.operating else {
+                            return
+                        }
+
+                        strongSelf.queue.async {
+                            strongSelf.sockets.insert(socket)
+                        }
+
+                        strongSelf.handleConnection(socket)
+
+                        strongSelf.queue.async {
+                            strongSelf.sockets.remove(socket)
+                        }
                     }
                 }
+                stop(completion: nil)
             }
-            strongSelf.stop()
         }
     }
 
-    public func stop() {
-        guard self.operating else { return }
-        self.state = .stopping
-        // Shutdown connected peers because they can live in 'keep-alive' or 'websocket' loops.
-        for socket in self.sockets {
+    public func stop(completion: (() -> Void)?) {
+        DispatchQueue.global(qos: .utility).async { [self] in
+            lock.lock()
+
+            guard operating else {
+                lock.unlock()
+                completion?()
+                return
+            }
+
+            state = .stopping
+            // Shutdown connected peers because they can live in 'keep-alive' or 'websocket' loops.
+            sockets.forEach {
+                $0.close()
+            }
+
+            queue.sync {
+                sockets.removeAll(keepingCapacity: true)
+            }
+
             socket.close()
+            state = .stopped
+
+            lock.unlock()
+            completion?()
         }
-        self.queue.sync {
-            self.sockets.removeAll(keepingCapacity: true)
-        }
-        socket.close()
-        self.state = .stopped
     }
 
     open func dispatch(_ request: HttpRequest) -> ([String: String], (HttpRequest) -> HttpResponse) {
