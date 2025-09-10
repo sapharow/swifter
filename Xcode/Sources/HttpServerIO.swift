@@ -132,9 +132,9 @@ open class HttpServerIO {
 
             state = .running
 
-            DispatchQueue.global(qos: priority).async { [self] in
+            DispatchQueue.global(qos: priority).async { [weak self] in
                 startedHandler?(.success(()))
-                while let socket = try? socket.acceptClientSocket() {
+                while let socket = try? self?.socket.acceptClientSocket() {
                     DispatchQueue.global(qos: priority).async { [weak self] in
                         
                         guard let strongSelf = self else {
@@ -145,48 +145,52 @@ open class HttpServerIO {
                             return
                         }
 
-                        strongSelf.queue.async {
+                        strongSelf.queue.discardableSync {
                             strongSelf.sockets.insert(socket)
                         }
 
                         strongSelf.handleConnection(socket)
 
-                        strongSelf.queue.async {
+                        strongSelf.queue.discardableSync {
                             strongSelf.sockets.remove(socket)
                         }
                     }
                 }
-                stop(completion: nil)
+                self?.privateStop(completion: nil)
             }
         }
     }
 
     public func stop(completion: (() -> Void)?) {
-        DispatchQueue.global(qos: .utility).async { [self] in
-            lock.lock()
+        DispatchQueue.global(qos: .default).async { [self] in
+            privateStop(completion: completion)
+        }
+    }
 
-            guard operating else {
-                lock.unlock()
-                completion?()
-                return
-            }
+    func privateStop(completion: (() -> Void)?) {
+        lock.lock()
 
-            state = .stopping
-            // Shutdown connected peers because they can live in 'keep-alive' or 'websocket' loops.
-            sockets.forEach {
-                $0.close()
-            }
-
-            queue.sync {
-                sockets.removeAll(keepingCapacity: true)
-            }
-
-            socket.close()
-            state = .stopped
-
+        guard operating else {
             lock.unlock()
             completion?()
+            return
         }
+
+        state = .stopping
+        // Shutdown connected peers because they can live in 'keep-alive' or 'websocket' loops.
+        sockets.forEach {
+            $0.close()
+        }
+
+        queue.sync {
+            self.sockets.removeAll(keepingCapacity: true)
+        }
+
+        socket.close()
+        state = .stopped
+
+        lock.unlock()
+        completion?()
     }
 
     open func dispatch(_ request: HttpRequest) -> ([String: String], (HttpRequest) -> HttpResponse) {
@@ -279,4 +283,13 @@ open class HttpServerIO {
 
         return keepAlive && content.length != -1
     }
+}
+
+extension DispatchQueue {
+
+    @discardableResult
+    func discardableSync<T>(_ closure: () throws -> T) rethrows -> T {
+        try sync(execute: closure)
+    }
+
 }
