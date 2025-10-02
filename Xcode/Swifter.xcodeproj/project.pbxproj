@@ -51,6 +51,9 @@
 		39BFCFFA26E4F0A000A6D7BF /* FilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BFCFF926E4F0A000A6D7BF /* FilesTests.swift */; };
 		39BFCFFB26E4F0A000A6D7BF /* FilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BFCFF926E4F0A000A6D7BF /* FilesTests.swift */; };
 		39BFCFFC26E4F0A000A6D7BF /* FilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BFCFF926E4F0A000A6D7BF /* FilesTests.swift */; };
+		621ED5DA2E8E1A31007DDB49 /* Locked.swift in Sources */ = {isa = PBXBuildFile; fileRef = 621ED5D92E8E1A31007DDB49 /* Locked.swift */; };
+		621ED5DB2E8E1A31007DDB49 /* Locked.swift in Sources */ = {isa = PBXBuildFile; fileRef = 621ED5D92E8E1A31007DDB49 /* Locked.swift */; };
+		621ED5DC2E8E1A31007DDB49 /* Locked.swift in Sources */ = {isa = PBXBuildFile; fileRef = 621ED5D92E8E1A31007DDB49 /* Locked.swift */; };
 		6A0D4512204E9988000A0726 /* MimeTypesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0D4511204E9988000A0726 /* MimeTypesTests.swift */; };
 		6AE2FF722048013000302EC4 /* MimeTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE2FF702048011A00302EC4 /* MimeTypes.swift */; };
 		6AE2FF732048013000302EC4 /* MimeTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE2FF702048011A00302EC4 /* MimeTypes.swift */; };
@@ -180,6 +183,7 @@
 		39BFCFF926E4F0A000A6D7BF /* FilesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FilesTests.swift; sourceTree = "<group>"; };
 		540CA839228F275B00A3AF9B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		540CA83A228F275B00A3AF9B /* CHANGELOG.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; name = CHANGELOG.md; path = ../CHANGELOG.md; sourceTree = "<group>"; };
+		621ED5D92E8E1A31007DDB49 /* Locked.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Locked.swift; sourceTree = "<group>"; };
 		6A0D4511204E9988000A0726 /* MimeTypesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimeTypesTests.swift; sourceTree = "<group>"; };
 		6AE2FF702048011A00302EC4 /* MimeTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimeTypes.swift; sourceTree = "<group>"; };
 		7AE893E71C05127900A29F63 /* Swifter.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Swifter.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -345,6 +349,7 @@
 				7C76B6F01D2C44F30030FC98 /* HttpRouter.swift */,
 				7C76B6F11D2C44F30030FC98 /* HttpServer.swift */,
 				7C76B6F21D2C44F30030FC98 /* HttpServerIO.swift */,
+				621ED5D92E8E1A31007DDB49 /* Locked.swift */,
 				7C76B6F31D2C44F30030FC98 /* Process.swift */,
 				7C76B6F41D2C44F30030FC98 /* Scopes.swift */,
 				7C76B6F51D2C44F30030FC98 /* Socket.swift */,
@@ -816,6 +821,7 @@
 			files = (
 				269B47881D3AAAE20042D137 /* HttpResponse.swift in Sources */,
 				269B47891D3AAAE20042D137 /* Scopes.swift in Sources */,
+				621ED5DC2E8E1A31007DDB49 /* Locked.swift in Sources */,
 				269B478A1D3AAAE20042D137 /* Process.swift in Sources */,
 				269B478B1D3AAAE20042D137 /* HttpParser.swift in Sources */,
 				269B478C1D3AAAE20042D137 /* String+Misc.swift in Sources */,
@@ -843,6 +849,7 @@
 			files = (
 				7C377E191D964B9F009C6148 /* String+File.swift in Sources */,
 				7C76B7171D2C45780030FC98 /* HttpResponse.swift in Sources */,
+				621ED5DA2E8E1A31007DDB49 /* Locked.swift in Sources */,
 				7C76B7211D2C45870030FC98 /* Scopes.swift in Sources */,
 				7C76B71F1D2C45840030FC98 /* Process.swift in Sources */,
 				7C76B7131D2C45730030FC98 /* HttpParser.swift in Sources */,
@@ -870,6 +877,7 @@
 			files = (
 				7C377E181D964B96009C6148 /* String+File.swift in Sources */,
 				7C76B7181D2C45790030FC98 /* HttpResponse.swift in Sources */,
+				621ED5DB2E8E1A31007DDB49 /* Locked.swift in Sources */,
 				7C76B7221D2C45870030FC98 /* Scopes.swift in Sources */,
 				7C76B7201D2C45840030FC98 /* Process.swift in Sources */,
 				7C76B7141D2C45730030FC98 /* HttpParser.swift in Sources */,

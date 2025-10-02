@@ -25,7 +25,7 @@ public enum SocketError: Error {
 open class Socket: Hashable, Equatable {
 
     let socketFileDescriptor: Int32
-    private var shutdown = false
+    @Locked<Bool> public var shutdown = false
 
     public init(socketFileDescriptor: Int32) {
         self.socketFileDescriptor = socketFileDescriptor
