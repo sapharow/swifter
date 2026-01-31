@@ -41,6 +41,7 @@ open class HttpServerIO {
     public var listenAddressIPv6: String?
 
     private let queue = DispatchQueue(label: "swifter.httpserverio.clientsockets")
+    private let connectionQueue = DispatchQueue(label: "swifter.httpserverio.clientsockets.connections")
 
     public func port() throws -> Int {
         return Int(try socket.port())
@@ -91,8 +92,11 @@ open class HttpServerIO {
             DispatchQueue.global(qos: priority).async { [weak self] in
                 startedHandler?(.success(()))
                 while let socket = try? self?.socket.acceptClientSocket() {
-                    DispatchQueue.global(qos: priority).async { [weak self] in
-                        
+                    guard let strongSelf = self else {
+                        return
+                    }
+                    strongSelf.connectionQueue.async { [weak self] in
+
                         guard let strongSelf = self else {
                             return
                         }
@@ -118,7 +122,7 @@ open class HttpServerIO {
     }
 
     public func stop(completion: (() -> Void)?) {
-        DispatchQueue.global(qos: .default).async { [self] in
+        connectionQueue.async { [self] in
             privateStop(completion: completion)
         }
     }
