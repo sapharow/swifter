@@ -137,9 +137,13 @@ open class HttpServerIO {
         }
 
         state = .stopping
+
         // Shut down read/write so any thread blocked in read() unblocks; then wait for
         // connection handlers to finish and close their sockets (avoids close-vs-read race).
-        sockets.forEach { $0.shutdownStream() }
+        queue.sync {
+            sockets.forEach { $0.shutdownStream() }
+        }
+
         connectionGroup.wait()
 
         queue.sync {
