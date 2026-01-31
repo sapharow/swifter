@@ -41,7 +41,7 @@ open class HttpServerIO {
     public var listenAddressIPv6: String?
 
     private let queue = DispatchQueue(label: "swifter.httpserverio.clientsockets")
-    private let connectionQueue = DispatchQueue(label: "swifter.httpserverio.clientsockets.connections")
+    private let connectionGroup = DispatchGroup()
 
     public func port() throws -> Int {
         return Int(try socket.port())
@@ -92,28 +92,28 @@ open class HttpServerIO {
             DispatchQueue.global(qos: priority).async { [weak self] in
                 startedHandler?(.success(()))
                 while let socket = try? self?.socket.acceptClientSocket() {
-                    guard let strongSelf = self else {
-                        return
-                    }
-                    strongSelf.connectionQueue.async { [weak self] in
+                    if let group = self?.connectionGroup {
+                        group.enter()
+                        DispatchQueue.global(qos: priority).async { [weak self] in
+                            defer { group.leave() }
+                            guard let strongSelf = self else { return }
+                            guard strongSelf.operating else {
+                                socket.close()
+                                return
+                            }
 
-                        guard let strongSelf = self else {
-                            return
+                            strongSelf.queue.discardableSync {
+                                strongSelf.sockets.insert(socket)
+                            }
+
+                            strongSelf.handleConnection(socket)
+
+                            strongSelf.queue.discardableSync {
+                                strongSelf.sockets.remove(socket)
+                            }
                         }
-
-                        guard strongSelf.operating else {
-                            return
-                        }
-
-                        strongSelf.queue.discardableSync {
-                            strongSelf.sockets.insert(socket)
-                        }
-
-                        strongSelf.handleConnection(socket)
-
-                        strongSelf.queue.discardableSync {
-                            strongSelf.sockets.remove(socket)
-                        }
+                    } else {
+                        socket.close()
                     }
                 }
                 self?.privateStop(completion: nil)
@@ -122,7 +122,7 @@ open class HttpServerIO {
     }
 
     public func stop(completion: (() -> Void)?) {
-        connectionQueue.async { [self] in
+        DispatchQueue.global(qos: .default).async { [self] in
             privateStop(completion: completion)
         }
     }
@@ -137,10 +137,10 @@ open class HttpServerIO {
         }
 
         state = .stopping
-        // Shutdown connected peers because they can live in 'keep-alive' or 'websocket' loops.
-        sockets.forEach {
-            $0.close()
-        }
+        // Shut down read/write so any thread blocked in read() unblocks; then wait for
+        // connection handlers to finish and close their sockets (avoids close-vs-read race).
+        sockets.forEach { $0.shutdownStream() }
+        connectionGroup.wait()
 
         queue.sync {
             self.sockets.removeAll(keepingCapacity: true)

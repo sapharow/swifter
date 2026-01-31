@@ -47,6 +47,17 @@ open class Socket: Hashable, Equatable {
         Socket.close(self.socketFileDescriptor)
     }
 
+    /// Shuts down the socket for both read and write (shutdown(2) SHUT_RDWR).
+    /// Any thread blocked in read() will unblock (EOF or error); does not close the fd.
+    /// Call close() afterward to release the file descriptor.
+    public func shutdownStream() {
+        #if os(Linux)
+            _ = Glibc.shutdown(self.socketFileDescriptor, Int32(SHUT_RDWR))
+        #else
+            _ = Darwin.shutdown(self.socketFileDescriptor, SHUT_RDWR)
+        #endif
+    }
+
     public func port() throws -> in_port_t {
         var addr = sockaddr_in()
         return try withUnsafePointer(to: &addr) { pointer in
