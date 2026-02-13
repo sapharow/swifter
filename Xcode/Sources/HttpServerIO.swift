@@ -44,6 +44,8 @@ open class HttpServerIO {
     private let connectionGroup = DispatchGroup()
 
     public func port() throws -> Int {
+        lock.lock()
+        defer { lock.unlock() }
         return Int(try socket.port())
     }
 
